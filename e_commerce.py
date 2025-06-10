@@ -148,7 +148,7 @@ elif page=="Analytics Live":
 # ------------------------------------------------------------------
 elif page=="Segmentation":
     st.write("\n")
-    st.markdown("## 🔍 Segmentation Dynamique (KMeans)")
+    st.markdown("## 🔍 Segmentation Dynamique")
     try:
         df = pdf_raw[[age_col, month_col]].dropna().copy()
         df["age_idx"],   _ = pd.factorize(df[age_col])
