@@ -152,7 +152,7 @@ elif page=="Segmentation":
     X = SC().fit_transform(df[["age_idx","month_idx"]])
 
     sils=[]
-    for k in range(2,7):
+    for k in range(2,21):
         km=KMeans(n_clusters=k,random_state=42).fit(X)
         sils.append((k, silhouette_score(X, km.labels_)))
     sil_df=pd.DataFrame(sils,columns=["k","silhouette"])
