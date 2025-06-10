@@ -169,38 +169,57 @@ elif page=="Segmentation":
 # ------------------------------------------------------------------
 elif page=="Recommandations":
     st.markdown("\n\n## 🤖 Recommandations Personnalisées")
-    df_seg = sel_raw[["Nom_d_utilisateur", product_col]].dropna().copy()
-    if sel_raw.empty:
-        st.warning("⚠️ Aucun utilisateur ne correspond à vos filtres.")
+    df_i = sel_raw[["Nom_d_utilisateur", product_col]].dropna().copy()
+    if df_i.empty:
+        st.warning("⚠️ Pas de données après filtres.")
     else:
-        df_seg["rating"] = 1
-        df_seg["user_id"], users = pd.factorize(df_seg["Nom_d_utilisateur"])
-        df_seg["item_id"], items = pd.factorize(df_seg[product_col])
+        # 2) Feedback implicite
+        df_i["rating"] = 1
 
+        # 3) Encodage user/item global
+        df_i["user_id"], users = pd.factorize(df_i["Nom_d_utilisateur"])
+        df_i["item_id"], items = pd.factorize(df_i[product_col])
+
+        # 4) Construction de la matrice creuse user×item
         M = coo_matrix(
-            (df_seg["rating"], (df_seg["user_id"], df_seg["item_id"])),
+            (df_i["rating"], (df_i["user_id"], df_i["item_id"])),
             shape=(len(users), len(items))
         )
 
-        model_seg = implicit.als.AlternatingLeastSquares(
-            factors=20, regularization=0.1, iterations=20, random_state=42
+        # 5) Entraînement du modèle ALS implicite
+        model = implicit.als.AlternatingLeastSquares(
+            factors=10,
+            regularization=0.1,
+            iterations=15,
+            random_state=42
         )
-        model_seg.fit(M.T)
+        model.fit(M.T)
 
-        valid_uids = [u for u in df_seg["user_id"].unique()
-                      if u < model_seg.user_factors.shape[0]]
-        if not valid_uids:
-            st.warning("⚠️ Pas assez de données pour profiler le segment.")
+        # 6) Profil de segment = moyenne des vecteurs users filtrés
+        uids = df_i["user_id"].unique()
+        # gardons uniquement les user_ids valides (< nombre de user_factors)
+        valid_uids = uids[uids < model.user_factors.shape[0]]
+        if len(valid_uids) == 0:
+            st.warning("⚠️ Aucun historique utilisateur valide pour profiler le segment.")
         else:
-            segment_vec = model_seg.user_factors[valid_uids].mean(axis=0)
-            scores = model_seg.item_factors.dot(segment_vec)
+            segment_vec = model.user_factors[valid_uids].mean(axis=0)
 
+            # 7) Score de tous les items
+            scores = model.item_factors.dot(segment_vec)
+
+            # 8) On récupère les indices triés par score décroissant
             top_n = 5
-            top_idx = np.argsort(scores)[::-1][:top_n]
+            top_idx = np.argsort(scores)[::-1]
+
+            # 9) Filtre pour ne garder que ceux < len(items), puis prend top_n
+            top_idx = [i for i in top_idx if i < len(items)][:top_n]
+
+            # 10) On prépare la liste finale
             recs = [(items[i], float(scores[i])) for i in top_idx]
 
+            # 11) Affichage
             df_recs = pd.DataFrame(recs, columns=["Produit", "Score"])
-            st.markdown(f"### 🎁 Top {top_n} recommandations pour votre segment avec : Rapidité de livraison (sans frais) et Respect de la transparence des produits")
+            st.markdown(f"### 🎁 Top {len(df_recs)} recommandations pour votre segment")
             st.table(df_recs.style.format({"Score": "{:.2f}"}))
 
 # ------------------------------------------------------------------
