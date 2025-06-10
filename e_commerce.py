@@ -149,23 +149,25 @@ elif page=="Analytics Live":
 elif page=="Segmentation":
     st.write("\n")
     st.markdown("## 🔍 Segmentation Dynamique (KMeans)")
-    df = sel_raw[[age_col, month_col]].dropna().copy()
-    df["age_idx"],   _ = pd.factorize(df[age_col])
-    df["month_idx"],_ = pd.factorize(df[month_col])
-    X = SC().fit_transform(df[["age_idx","month_idx"]])
-
-    sils=[]
-    for k in range(2,21):
-        km=KMeans(n_clusters=k,random_state=42).fit(X)
-        sils.append((k, silhouette_score(X, km.labels_)))
-    sil_df=pd.DataFrame(sils,columns=["k","silhouette"])
-    st.plotly_chart(px.line(sil_df,x="k",y="silhouette",markers=True),use_container_width=True)
-
-    best_k=int(sil_df.loc[sil_df.silhouette.idxmax(),"k"])
-    st.markdown(f"**👉 k optimal : {best_k}**")
-    km=KMeans(n_clusters=best_k,random_state=42).fit(X)
-    df["cluster"]=km.labels_
-    st.plotly_chart(px.scatter(df, x="age_idx", y="month_idx", color="cluster"), use_container_width=True)
+    try:
+        df = sel_raw[[age_col, month_col]].dropna().copy()
+        df["age_idx"],   _ = pd.factorize(df[age_col])
+        df["month_idx"],_ = pd.factorize(df[month_col])
+        X = SC().fit_transform(df[["age_idx","month_idx"]])
+    
+        sils=[]
+        for k in range(2,21):
+            km=KMeans(n_clusters=k,random_state=42).fit(X)
+            sils.append((k, silhouette_score(X, km.labels_)))
+        sil_df=pd.DataFrame(sils,columns=["k","silhouette"])
+        st.plotly_chart(px.line(sil_df,x="k",y="silhouette",markers=True),use_container_width=True)
+    
+        best_k=int(sil_df.loc[sil_df.silhouette.idxmax(),"k"])
+        st.markdown(f"**👉 k optimal : {best_k}**")
+        km=KMeans(n_clusters=best_k,random_state=42).fit(X)
+        df["cluster"]=km.labels_
+        st.plotly_chart(px.scatter(df, x="age_idx", y="month_idx", color="cluster"), use_container_width=True)
+    except : st.warning("⚠️ Veuillez désactiver tous les filtres sélectionnés!")
 
 # ------------------------------------------------------------------
 # 6️⃣ – RECOMMANDATIONS PERSO
