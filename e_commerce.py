@@ -124,7 +124,7 @@ if m not in (ms[0],ms[1]): sel_raw = sel_raw[ sel_raw[month_col]==m ]
 # 3️⃣ – ACCUEIL
 # ------------------------------------------------------------------
 if page=="Accueil":
-    st.markdown("## <br><br>\n\n🎯 CommerceGenius – Comportement Client")
+    st.markdown("\n\n## 🎯 CommerceGenius – Comportement Client")
     st.markdown("Tableau de bord E-Commerce Cameroun : en temps réel, segmentation, recommandations.")
     img = Image.open("image.jpg")
     st.image(img.resize((1000, int((float(img.size[1]) * float((700 / float(img.size[0])))))), Image.FILTERED), use_container_width=False)
@@ -133,7 +133,7 @@ if page=="Accueil":
 # 4️⃣ – ANALYTICS LIVE
 # ------------------------------------------------------------------
 elif page=="Analytics Live":
-    st.markdown("## <br><br>📈 Analytics en Temps Réel")
+    st.markdown("\n\n## 📈 Analytics en Temps Réel")
     counts = pdf_raw[age_col].value_counts().reindex(ass[1:]).fillna(0).reset_index()
     counts.columns = [age_col, "count"]
     fig = px.bar(counts, x=age_col, y="count",
@@ -145,7 +145,7 @@ elif page=="Analytics Live":
 # 5️⃣ – SEGMENTATION DYNAMIQUE
 # ------------------------------------------------------------------
 elif page=="Segmentation":
-    st.markdown("## <br><br>🔍 Segmentation Dynamique (KMeans)")
+    st.markdown("\n\n## 🔍 Segmentation Dynamique (KMeans)")
     df = sel_raw[[age_col, month_col]].dropna().copy()
     df["age_idx"],   _ = pd.factorize(df[age_col])
     df["month_idx"],_ = pd.factorize(df[month_col])
@@ -168,51 +168,46 @@ elif page=="Segmentation":
 # 6️⃣ – RECOMMANDATIONS PERSO
 # ------------------------------------------------------------------
 elif page=="Recommandations":
-    st.markdown("## <br><br>🤖 Recommandations Personnalisées")
-    df_i = sel_raw[["Nom_d_utilisateur", product_col]].dropna().copy()
-    if df_i.empty:
-        st.warning("⚠️ Pas de données après filtres.")
+    st.markdown("\n\n## 🤖 Recommandations Personnalisées")
+    df_seg = sel_raw[["Nom_d_utilisateur", product_col]].dropna().copy()
+    if sel_raw.empty:
+        st.warning("⚠️ Aucun utilisateur ne correspond à vos filtres.")
     else:
-        # feedback implicite
-        df_i["rating"] = 1
-        # encodage global user/item
-        df_i["user_id"], users = pd.factorize(df_i["Nom_d_utilisateur"])
-        df_i["item_id"], items = pd.factorize(df_i[product_col])
-        # creation matrice user×item
+        df_seg["rating"] = 1
+        df_seg["user_id"], users = pd.factorize(df_seg["Nom_d_utilisateur"])
+        df_seg["item_id"], items = pd.factorize(df_seg[product_col])
+
         M = coo_matrix(
-            (df_i["rating"], (df_i["user_id"], df_i["item_id"])),
+            (df_seg["rating"], (df_seg["user_id"], df_seg["item_id"])),
             shape=(len(users), len(items))
         )
-        # entrainement ALS implicite
-        model = implicit.als.AlternatingLeastSquares(
-            factors=10, regularization=0.1, iterations=15
-        )
-        model.fit(M.T)
 
-        # on ne garde que les user_ids valides (in range)
-        uids = df_i["user_id"].unique()
-        valid_uids = uids[(uids >= 0) & (uids < model.user_factors.shape[0])]
-        if len(valid_uids) == 0:
-            st.warning("⚠️ Aucun utilisateur valide pour construire le profil de segment.")
+        model_seg = implicit.als.AlternatingLeastSquares(
+            factors=20, regularization=0.1, iterations=20, random_state=42
+        )
+        model_seg.fit(M.T)
+
+        valid_uids = [u for u in df_seg["user_id"].unique()
+                      if u < model_seg.user_factors.shape[0]]
+        if not valid_uids:
+            st.warning("⚠️ Pas assez de données pour profiler le segment.")
         else:
-            # profil = moyenne des vecteurs des users valides
-            segment_vec = model.user_factors[valid_uids].mean(axis=0)
-            # score tous les items
-            scores = model.item_factors.dot(segment_vec)
-            # top-5
+            segment_vec = model_seg.user_factors[valid_uids].mean(axis=0)
+            scores = model_seg.item_factors.dot(segment_vec)
+
             top_n = 5
             top_idx = np.argsort(scores)[::-1][:top_n]
             recs = [(items[i], float(scores[i])) for i in top_idx]
-            # affichage
+
             df_recs = pd.DataFrame(recs, columns=["Produit", "Score"])
-            st.markdown(f"### 🎁 Top {top_n} recommandations pour votre segment")
+            st.markdown(f"### 🎁 Top {top_n} recommandations pour votre segment avec : Rapidité de livraison (sans frais) et Respect de la transparence des produits")
             st.table(df_recs.style.format({"Score": "{:.2f}"}))
 
 # ------------------------------------------------------------------
 # 7️⃣ – ALERTES AUTOMATIQUES
 # ------------------------------------------------------------------
 elif page=="Alertes":
-    st.markdown("## <br><br>🚨 Alertes Comportement")
+    st.markdown("\n\n## 🚨 Alertes Comportement")
     df_a = sel_raw[[age_col,month_col,achat_col,mode_col,"Abandon_flag"]].dropna().copy()
     for c in [age_col,month_col,achat_col,mode_col]:
         df_a[f"{c}_idx"],_ = pd.factorize(df_a[c])
@@ -231,7 +226,7 @@ elif page=="Alertes":
 # 8️⃣ – VISUALISATIONS INTERACTIVES
 # ------------------------------------------------------------------
 elif page=="Visualisations":
-    st.markdown("## <br><br>📊 Visualisations")
+    st.markdown("\n\n## 📊 Visualisations")
     if sel_raw.empty:
         st.warning("⚠️ Pas de données.")
     else:
@@ -246,14 +241,14 @@ elif page=="Visualisations":
 # 9️⃣ – EXPORT CSV
 # ------------------------------------------------------------------
 elif page=="Export CSV":
-    st.markdown("## 📥 <br><br>Export des données filtrées")
+    st.markdown("\n\n## 📥 Export des données filtrées")
     st.download_button("⬇️ Télécharger CSV", sel_raw.to_csv(index=False), "export.csv","text/csv")
 
 # ------------------------------------------------------------------
 # 🔟 – COMMENTAIRES
 # ------------------------------------------------------------------
 else:
-    st.markdown("## <br><br>💬 Nos Commentaires")
+    st.markdown("\n\n## 💬 Nos Commentaires")
     txt=st.text_area("Commentaires…")
     if st.button("Ajouter"):
         with open("comments.txt","a") as f:
