@@ -278,9 +278,8 @@ else:
     st.write("\n")
     st.markdown("## 💬 Nos Commentaires")
     txt=st.text_area("Commentaires…")
+    st.text(open("comments.txt", "r", encoding="utf-8").read())
     if st.button("Ajouter"):
         with open("comments.txt","a") as f:
             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} — {txt}\n")
         st.success("👍")
-    if os.path.exists("comments.txt"):
-        st.text(open("comments.txt", "r", encoding="utf-8").read())
