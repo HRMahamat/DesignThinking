@@ -216,10 +216,12 @@ elif page=="Visualisations":
     if sel_raw.empty:
         st.warning("⚠️ Pas de données.")
     else:
-        st.plotly_chart(px.histogram(sel_raw, x=achat_col,
-            category_orders={achat_col:["Jamais","Une fois par mois","Plusieurs fois par mois"]}),use_container_width=True)
-        dfp=sel_raw[mode_col].value_counts().reset_index().rename(columns={"index":"Mode",mode_col:"Nombre"})
-        st.plotly_chart(px.bar(dfp,x="Mode",y="Nombre"),use_container_width=True)
+        st.plotly_chart(px.histogram(sel_raw, x=achat_col, category_orders={achat_col:["Jamais","Une fois par mois","Plusieurs fois par mois"]}),use_container_width=True)
+        df_pay = sel_raw[mode_col].value_counts().reset_index()
+        df_pay.columns = ["Mode", "Nombre"]
+        fig2 = px.bar(df_pay, x="Mode", y="Nombre", title="Top modes de paiement", labels={"Mode":"Mode de paiement","Nombre":"Nombre de réponses"})
+        fig2.update_layout(xaxis_tickangle=-45, margin=dict(t=40, b=0, l=0, r=0))
+        st.plotly_chart(fig2, use_container_width=True)
 
 # ------------------------------------------------------------------
 # 9️⃣ – EXPORT CSV
