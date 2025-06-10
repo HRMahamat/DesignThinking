@@ -124,7 +124,8 @@ if m not in (ms[0],ms[1]): sel_raw = sel_raw[ sel_raw[month_col]==m ]
 # 3️⃣ – ACCUEIL
 # ------------------------------------------------------------------
 if page=="Accueil":
-    st.markdown("\n\n## 🎯 CommerceGenius – Comportement Client")
+    st.write("\n")
+    st.markdown("## 🎯 CommerceGenius – Comportement Client")
     st.markdown("Tableau de bord E-Commerce Cameroun : en temps réel, segmentation, recommandations.")
     img = Image.open("image.jpg")
     st.image(img.resize((1000, int((float(img.size[1]) * float((700 / float(img.size[0])))))), Image.FILTERED), use_container_width=False)
@@ -133,7 +134,8 @@ if page=="Accueil":
 # 4️⃣ – ANALYTICS LIVE
 # ------------------------------------------------------------------
 elif page=="Analytics Live":
-    st.markdown("\n\n## 📈 Analytics en Temps Réel")
+    st.write("\n")
+    st.markdown("## 📈 Analytics en Temps Réel")
     counts = pdf_raw[age_col].value_counts().reindex(ass[1:]).fillna(0).reset_index()
     counts.columns = [age_col, "count"]
     fig = px.bar(counts, x=age_col, y="count",
@@ -145,7 +147,8 @@ elif page=="Analytics Live":
 # 5️⃣ – SEGMENTATION DYNAMIQUE
 # ------------------------------------------------------------------
 elif page=="Segmentation":
-    st.markdown("\n\n## 🔍 Segmentation Dynamique (KMeans)")
+    st.write("\n")
+    st.markdown("## 🔍 Segmentation Dynamique (KMeans)")
     df = sel_raw[[age_col, month_col]].dropna().copy()
     df["age_idx"],   _ = pd.factorize(df[age_col])
     df["month_idx"],_ = pd.factorize(df[month_col])
@@ -168,7 +171,8 @@ elif page=="Segmentation":
 # 6️⃣ – RECOMMANDATIONS PERSO
 # ------------------------------------------------------------------
 elif page=="Recommandations":
-    st.markdown("\n\n## 🤖 Recommandations Personnalisées")
+    st.write("\n")
+    st.markdown("## 🤖 Recommandations Personnalisées")
     df_i = sel_raw[["Nom_d_utilisateur", product_col]].dropna().copy()
     if df_i.empty:
         st.warning("⚠️ Pas de données après filtres.")
@@ -197,7 +201,6 @@ elif page=="Recommandations":
 
         # 6) Profil de segment = moyenne des vecteurs users filtrés
         uids = df_i["user_id"].unique()
-        # gardons uniquement les user_ids valides (< nombre de user_factors)
         valid_uids = uids[uids < model.user_factors.shape[0]]
         if len(valid_uids) == 0:
             st.warning("⚠️ Aucun historique utilisateur valide pour profiler le segment.")
@@ -226,7 +229,8 @@ elif page=="Recommandations":
 # 7️⃣ – ALERTES AUTOMATIQUES
 # ------------------------------------------------------------------
 elif page=="Alertes":
-    st.markdown("\n\n## 🚨 Alertes Comportement")
+    st.write("\n")
+    st.markdown("## 🚨 Alertes Comportement")
     df_a = sel_raw[[age_col,month_col,achat_col,mode_col,"Abandon_flag"]].dropna().copy()
     for c in [age_col,month_col,achat_col,mode_col]:
         df_a[f"{c}_idx"],_ = pd.factorize(df_a[c])
@@ -245,7 +249,8 @@ elif page=="Alertes":
 # 8️⃣ – VISUALISATIONS INTERACTIVES
 # ------------------------------------------------------------------
 elif page=="Visualisations":
-    st.markdown("\n\n## 📊 Visualisations")
+    st.write("\n")
+    st.markdown("## 📊 Visualisations")
     if sel_raw.empty:
         st.warning("⚠️ Pas de données.")
     else:
@@ -260,14 +265,16 @@ elif page=="Visualisations":
 # 9️⃣ – EXPORT CSV
 # ------------------------------------------------------------------
 elif page=="Export CSV":
-    st.markdown("\n\n## 📥 Export des données filtrées")
+    st.write("\n")
+    st.markdown("## 📥 Export des données filtrées")
     st.download_button("⬇️ Télécharger CSV", sel_raw.to_csv(index=False), "export.csv","text/csv")
 
 # ------------------------------------------------------------------
 # 🔟 – COMMENTAIRES
 # ------------------------------------------------------------------
 else:
-    st.markdown("\n\n## 💬 Nos Commentaires")
+    st.write("\n")
+    st.markdown("## 💬 Nos Commentaires")
     txt=st.text_area("Commentaires…")
     if st.button("Ajouter"):
         with open("comments.txt","a") as f:
