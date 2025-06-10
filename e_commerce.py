@@ -150,7 +150,7 @@ elif page=="Segmentation":
     st.write("\n")
     st.markdown("## 🔍 Segmentation Dynamique (KMeans)")
     try:
-        df = sel_raw[[age_col, month_col]].dropna().copy()
+        df = pdf_raw[[age_col, month_col]].dropna().copy()
         df["age_idx"],   _ = pd.factorize(df[age_col])
         df["month_idx"],_ = pd.factorize(df[month_col])
         X = SC().fit_transform(df[["age_idx","month_idx"]])
