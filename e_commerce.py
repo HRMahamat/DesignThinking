@@ -124,7 +124,7 @@ if m not in (ms[0],ms[1]): sel_raw = sel_raw[ sel_raw[month_col]==m ]
 # 3️⃣ – ACCUEIL
 # ------------------------------------------------------------------
 if page=="Accueil":
-    st.markdown("## <br><br>🎯 CommerceGenius – Comportement Client")
+    st.markdown("## <br><br>\n\n🎯 CommerceGenius – Comportement Client")
     st.markdown("Tableau de bord E-Commerce Cameroun : en temps réel, segmentation, recommandations.")
     img = Image.open("image.jpg")
     st.image(img.resize((1000, int((float(img.size[1]) * float((700 / float(img.size[0])))))), Image.FILTERED), use_container_width=False)
@@ -173,27 +173,40 @@ elif page=="Recommandations":
     if df_i.empty:
         st.warning("⚠️ Pas de données après filtres.")
     else:
-        # feedback implicite + encodage
-        df_i["rating"]=1
+        # feedback implicite
+        df_i["rating"] = 1
+        # encodage global user/item
         df_i["user_id"], users = pd.factorize(df_i["Nom_d_utilisateur"])
         df_i["item_id"], items = pd.factorize(df_i[product_col])
-        M = coo_matrix((df_i.rating,(df_i.user_id,df_i.item_id)),
-                       shape=(len(users),len(items)))
-        # ALS implicite
+        # creation matrice user×item
+        M = coo_matrix(
+            (df_i["rating"], (df_i["user_id"], df_i["item_id"])),
+            shape=(len(users), len(items))
+        )
+        # entrainement ALS implicite
         model = implicit.als.AlternatingLeastSquares(
             factors=10, regularization=0.1, iterations=15
         )
         model.fit(M.T)
 
-        # profil de segment = moyenne des vecteurs users filtrés
-        uids = df_i.user_id.unique()
-        segment_vec = model.user_factors[uids].mean(axis=0)
-        scores = model.item_factors.dot(segment_vec)
-
-        top5 = np.argsort(scores)[::-1][:5]
-        recs = [(items[i], scores[i]) for i in top5]
-        dfr = pd.DataFrame(recs, columns=["Produit","Score"])
-        st.table(dfr.style.format({"Score":"{:.2f}"}))
+        # on ne garde que les user_ids valides (in range)
+        uids = df_i["user_id"].unique()
+        valid_uids = uids[(uids >= 0) & (uids < model.user_factors.shape[0])]
+        if len(valid_uids) == 0:
+            st.warning("⚠️ Aucun utilisateur valide pour construire le profil de segment.")
+        else:
+            # profil = moyenne des vecteurs des users valides
+            segment_vec = model.user_factors[valid_uids].mean(axis=0)
+            # score tous les items
+            scores = model.item_factors.dot(segment_vec)
+            # top-5
+            top_n = 5
+            top_idx = np.argsort(scores)[::-1][:top_n]
+            recs = [(items[i], float(scores[i])) for i in top_idx]
+            # affichage
+            df_recs = pd.DataFrame(recs, columns=["Produit", "Score"])
+            st.markdown(f"### 🎁 Top {top_n} recommandations pour votre segment")
+            st.table(df_recs.style.format({"Score": "{:.2f}"}))
 
 # ------------------------------------------------------------------
 # 7️⃣ – ALERTES AUTOMATIQUES
