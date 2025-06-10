@@ -222,7 +222,7 @@ elif page=="Recommandations":
 
             # 11) Affichage
             df_recs = pd.DataFrame(recs, columns=["Produit", "Score"])
-            st.markdown(f"### 🎁 Top {len(df_recs)} recommandations pour votre segment")
+            st.markdown(f"### 🎁 Top {len(df_recs)} recommandations pour votre segment avec : Rapidité de livraison (sans frais) et Respect de la transparence des produits")
             st.table(df_recs.style.format({"Score": "{:.2f}"}))
 
 # ------------------------------------------------------------------
