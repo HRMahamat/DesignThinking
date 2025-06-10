@@ -124,7 +124,7 @@ if m not in (ms[0],ms[1]): sel_raw = sel_raw[ sel_raw[month_col]==m ]
 # 3️⃣ – ACCUEIL
 # ------------------------------------------------------------------
 if page=="Accueil":
-    st.markdown("<br><br>## 🎯 CommerceGenius – Comportement Client")
+    st.markdown("## <br><br>🎯 CommerceGenius – Comportement Client")
     st.markdown("Tableau de bord E-Commerce Cameroun : en temps réel, segmentation, recommandations.")
     img = Image.open("image.jpg")
     st.image(img.resize((1000, int((float(img.size[1]) * float((700 / float(img.size[0])))))), Image.FILTERED), use_container_width=False)
@@ -133,7 +133,7 @@ if page=="Accueil":
 # 4️⃣ – ANALYTICS LIVE
 # ------------------------------------------------------------------
 elif page=="Analytics Live":
-    st.markdown("<br><br>## 📈 Analytics en Temps Réel")
+    st.markdown("## <br><br>📈 Analytics en Temps Réel")
     counts = pdf_raw[age_col].value_counts().reindex(ass[1:]).fillna(0).reset_index()
     counts.columns = [age_col, "count"]
     fig = px.bar(counts, x=age_col, y="count",
@@ -145,7 +145,7 @@ elif page=="Analytics Live":
 # 5️⃣ – SEGMENTATION DYNAMIQUE
 # ------------------------------------------------------------------
 elif page=="Segmentation":
-    st.markdown("<br><br>## 🔍 Segmentation Dynamique (KMeans)")
+    st.markdown("## <br><br>🔍 Segmentation Dynamique (KMeans)")
     df = sel_raw[[age_col, month_col]].dropna().copy()
     df["age_idx"],   _ = pd.factorize(df[age_col])
     df["month_idx"],_ = pd.factorize(df[month_col])
@@ -168,54 +168,38 @@ elif page=="Segmentation":
 # 6️⃣ – RECOMMANDATIONS PERSO
 # ------------------------------------------------------------------
 elif page=="Recommandations":
-    st.markdown("<br><br>## 🤖 Recommandations Personnalisées")
-    df_all = pdf_raw[["Nom_d_utilisateur", product_col]].dropna().copy()
-    if df_all.empty:
-        st.warning("⚠️ Aucun historique pour entraîner le modèle.")
+    st.markdown("## <br><br>🤖 Recommandations Personnalisées")
+    df_i = sel_raw[["Nom_d_utilisateur", product_col]].dropna().copy()
+    if df_i.empty:
+        st.warning("⚠️ Pas de données après filtres.")
     else:
-        df_all["rating"] = 1  # feedback implicite
-        # encodage global des users & items
-        df_all["user_id"], users = pd.factorize(df_all["Nom_d_utilisateur"])
-        df_all["item_id"], items = pd.factorize(df_all[product_col])
-        M_all = coo_matrix(
-            (df_all["rating"], (df_all["user_id"], df_all["item_id"])),
-            shape=(len(users), len(items))
+        # feedback implicite + encodage
+        df_i["rating"]=1
+        df_i["user_id"], users = pd.factorize(df_i["Nom_d_utilisateur"])
+        df_i["item_id"], items = pd.factorize(df_i[product_col])
+        M = coo_matrix((df_i.rating,(df_i.user_id,df_i.item_id)),
+                       shape=(len(users),len(items)))
+        # ALS implicite
+        model = implicit.als.AlternatingLeastSquares(
+            factors=10, regularization=0.1, iterations=15
         )
-        # entraînement global
-        model_global = implicit.als.AlternatingLeastSquares(
-            factors=20, regularization=0.1, iterations=15, random_state=42
-        )
-        model_global.fit(M_all.T)
+        model.fit(M.T)
 
-        # 2) On identifie les user_ids de VOTRE segment filtré sel_raw
-        df_seg = sel_raw[["Nom_d_utilisateur"]].dropna().copy()
-        # on ne garde que ceux qui existaient lors de l'entraînement
-        user_map = {u: i for i, u in enumerate(users)}
-        df_seg["uid"] = df_seg["Nom_d_utilisateur"].map(user_map)
-        valid_uids = df_seg["uid"].dropna().astype(int).unique()
+        # profil de segment = moyenne des vecteurs users filtrés
+        uids = df_i.user_id.unique()
+        segment_vec = model.user_factors[uids].mean(axis=0)
+        scores = model.item_factors.dot(segment_vec)
 
-        if len(valid_uids) == 0:
-            st.warning("⚠️ Aucun utilisateur du segment n'a d'historique pour recommander.")
-        else:
-            # 3) Profil de segment = moyenne des vecteurs users globaux
-            segment_vec = model_global.user_factors[valid_uids].mean(axis=0)
-
-            # 4) On score tous les items par similarité (dot produit)
-            scores = model_global.item_factors.dot(segment_vec)
-            top_n = 5
-            top_idx = np.argsort(scores)[::-1][:top_n]
-
-            recs = [(items[i], float(scores[i])) for i in top_idx]
-            df_recs = pd.DataFrame(recs, columns=["Produit", "Score"])
-
-            st.markdown(f"### 🎁 Top {top_n} recommandations pour votre segment")
-            st.table(df_recs.style.format({"Score": "{:.2f}"}))
+        top5 = np.argsort(scores)[::-1][:5]
+        recs = [(items[i], scores[i]) for i in top5]
+        dfr = pd.DataFrame(recs, columns=["Produit","Score"])
+        st.table(dfr.style.format({"Score":"{:.2f}"}))
 
 # ------------------------------------------------------------------
 # 7️⃣ – ALERTES AUTOMATIQUES
 # ------------------------------------------------------------------
 elif page=="Alertes":
-    st.markdown("<br><br>## 🚨 Alertes Comportement")
+    st.markdown("## <br><br>🚨 Alertes Comportement")
     df_a = sel_raw[[age_col,month_col,achat_col,mode_col,"Abandon_flag"]].dropna().copy()
     for c in [age_col,month_col,achat_col,mode_col]:
         df_a[f"{c}_idx"],_ = pd.factorize(df_a[c])
@@ -234,11 +218,11 @@ elif page=="Alertes":
 # 8️⃣ – VISUALISATIONS INTERACTIVES
 # ------------------------------------------------------------------
 elif page=="Visualisations":
-    st.markdown("<br><br>## 📊 Visualisations")
+    st.markdown("## <br><br>📊 Visualisations")
     if sel_raw.empty:
         st.warning("⚠️ Pas de données.")
     else:
-        st.plotly_chart(px.histogram(sel_raw, x=achat_col, category_orders={achat_col:["Jamais","Une fois par mois","Plusieurs fois par mois"]}),use_container_width=True)
+        st.plotly_chart(px.histogram(sel_raw, x=achat_col, category_orders={achat_col:["Jamais","Une fois par mois","Plusieurs fois par mois",  "Hebdomadairement", "Quotidiennement"]}),use_container_width=True)
         df_pay = sel_raw[mode_col].value_counts().reset_index()
         df_pay.columns = ["Mode", "Nombre"]
         fig2 = px.bar(df_pay, x="Mode", y="Nombre", title="Top modes de paiement", labels={"Mode":"Mode de paiement","Nombre":"Nombre de réponses"})
@@ -249,14 +233,14 @@ elif page=="Visualisations":
 # 9️⃣ – EXPORT CSV
 # ------------------------------------------------------------------
 elif page=="Export CSV":
-    st.markdown("<br><br>## 📥 Export des données filtrées")
+    st.markdown("## 📥 <br><br>Export des données filtrées")
     st.download_button("⬇️ Télécharger CSV", sel_raw.to_csv(index=False), "export.csv","text/csv")
 
 # ------------------------------------------------------------------
 # 🔟 – COMMENTAIRES
 # ------------------------------------------------------------------
 else:
-    st.markdown("<br><br>## 💬 Nos Commentaires")
+    st.markdown("## <br><br>💬 Nos Commentaires")
     txt=st.text_area("Commentaires…")
     if st.button("Ajouter"):
         with open("comments.txt","a") as f:
