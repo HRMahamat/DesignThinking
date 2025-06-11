@@ -224,8 +224,12 @@ elif page=="Recommandations":
 
             # 11) Affichage
             df_recs = pd.DataFrame(recs, columns=["Produit", "Score"])
-            st.markdown(f"### 🎁 Top {len(df_recs)} recommandations pour votre segment avec : Rapidité de livraison (sans frais) et Respect de la transparence des produits")
+            st.markdown(f"### 🎁 Top {len(df_recs)} recommandations pour votre segment")
             st.table(df_recs.style.format({"Score": "{:.2f}"}))
+            st.write("\n\n")
+            st.success("""Nous avons également pu constater que les clients sont exigeant concernant : 
+            \n    *La Rapidité de livraison (sans frais)
+            \n    *Le Respect de la transparence des produits"""")
 
 # ------------------------------------------------------------------
 # 7️⃣ – ALERTES AUTOMATIQUES
