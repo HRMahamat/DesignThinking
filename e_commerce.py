@@ -229,7 +229,7 @@ elif page=="Recommandations":
             st.write("\n\n")
             st.success("""Nous avons également pu constater que les clients sont exigeant concernant : 
             \n    *La Rapidité de livraison (sans frais)
-            \n    *Le Respect de la transparence des produits"""")
+            \n    *Le Respect de la transparence des produits""")
 
 # ------------------------------------------------------------------
 # 7️⃣ – ALERTES AUTOMATIQUES
